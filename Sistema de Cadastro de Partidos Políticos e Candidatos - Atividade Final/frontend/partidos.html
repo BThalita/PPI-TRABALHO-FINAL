@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro de Partidos</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Cadastro de Partidos</h2>
+        <form id="partidoForm">
+            <label for="nome">Nome:</label>
+            <input type="text" id="nome" required>
+            <label for="sigla">Sigla:</label>
+            <input type="text" id="sigla" required>
+            <label for="numero_registro">Número de Registro:</label>
+            <input type="number" id="numero_registro" required>
+            <button type="submit">Cadastrar</button>
+        </form>
+        <p id="mensagem"></p>
+
+        <!-- Formulário de Edição (inicialmente escondido) -->
+        <form id="editarPartidoForm" style="display: none;">
+            <h2>Editar Partido</h2>
+            <input type="hidden" id="editarId">
+            <label for="editarNome">Nome:</label>
+            <input type="text" id="editarNome" required>
+            <label for="editarSigla">Sigla:</label>
+            <input type="text" id="editarSigla" required>
+            <label for="editarNumeroRegistro">Número de Registro:</label>
+            <input type="number" id="editarNumeroRegistro" required>
+            <button type="submit">Salvar Alterações</button>
+            <button type="button" onclick="cancelarEdicao()">Cancelar</button>
+        </form>
+
+        <table id="tabelaPartidos">
+            <tr><th>ID</th><th>Nome</th><th>Sigla</th><th>Número</th><th>Ações</th></tr>
+        </table>
+        <a href="/menu.html" class="voltar">Voltar ao Menu</a>
+    </div>
+
+    <script>
+        const loggedin = localStorage.getItem('loggedin');
+        const loginTime = localStorage.getItem('loginTime');
+        const trintaMinutos = 30 * 60 * 1000;
+        if (!loggedin || (Date.now() - loginTime > trintaMinutos)) {
+            window.location.href = '/index.html';
+        }
+
+        // Cadastro
+        document.getElementById('partidoForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('nome').value;
+            const sigla = document.getElementById('sigla').value;
+            const numero_registro = document.getElementById('numero_registro').value;
+
+            fetch('/cadastrar-partido', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome, sigla, numero_registro })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('mensagem').innerText = 'Partido cadastrado com sucesso!';
+                    carregarPartidos();
+                    document.getElementById('partidoForm').reset();
+                } else {
+                    document.getElementById('mensagem').innerText = 'Erro ao cadastrar: ' + (data.error || 'Tente novamente.');
+                }
+            });
+        });
+
+        // Edição
+        document.getElementById('editarPartidoForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editarId').value;
+            const nome = document.getElementById('editarNome').value;
+            const sigla = document.getElementById('editarSigla').value;
+            const numero_registro = document.getElementById('editarNumeroRegistro').value;
+
+            fetch('/editar-partido', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, nome, sigla, numero_registro })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('mensagem').innerText = 'Partido atualizado com sucesso!';
+                    carregarPartidos();
+                    cancelarEdicao();
+                } else {
+                    document.getElementById('mensagem').innerText = 'Erro ao atualizar: ' + (data.error || 'Tente novamente.');
+                }
+            });
+        });
+
+        function carregarPartidos() {
+            fetch('/listar-partidos')
+            .then(response => response.json())
+            .then(data => {
+                const tabela = document.getElementById('tabelaPartidos');
+                tabela.innerHTML = '<tr><th>ID</th><th>Nome</th><th>Sigla</th><th>Número</th><th>Ações</th></tr>';
+                data.forEach(partido => {
+                    tabela.innerHTML += `
+                        <tr>
+                            <td>${partido.id}</td>
+                            <td>${partido.nome}</td>
+                            <td>${partido.sigla}</td>
+                            <td>${partido.numero_registro}</td>
+                            <td>
+                                <button class="editar" onclick="editarPartido(${partido.id}, '${partido.nome}', '${partido.sigla}', ${partido.numero_registro})">Editar</button>
+                                <button class="excluir" onclick="excluirPartido(${partido.id})">Excluir</button>
+                            </td>
+                        </tr>`;
+                });
+            });
+        }
+        carregarPartidos();
+
+        function editarPartido(id, nome, sigla, numero_registro) {
+            document.getElementById('partidoForm').style.display = 'none';
+            document.getElementById('editarPartidoForm').style.display = 'block';
+            document.getElementById('editarId').value = id;
+            document.getElementById('editarNome').value = nome;
+            document.getElementById('editarSigla').value = sigla;
+            document.getElementById('editarNumeroRegistro').value = numero_registro;
+        }
+
+        function cancelarEdicao() {
+            document.getElementById('partidoForm').style.display = 'block';
+            document.getElementById('editarPartidoForm').style.display = 'none';
+            document.getElementById('editarPartidoForm').reset();
+            document.getElementById('mensagem').innerText = '';
+        }
+
+        function excluirPartido(id) {
+            if (confirm('Deseja excluir este partido?')) {
+                fetch('/excluir-partido', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        carregarPartidos();
+                        document.getElementById('mensagem').innerText = 'Partido excluído com sucesso!';
+                    } else {
+                        document.getElementById('mensagem').innerText = 'Erro ao excluir: ' + (data.error || 'Tente novamente.');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

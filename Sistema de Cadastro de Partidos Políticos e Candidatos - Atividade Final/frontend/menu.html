@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu - Sistema de Cadastro</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Bem-vindo ao Sistema</h2>
+        <nav>
+            <ul>
+                <li><a href="/partidos.html">Cadastro de Partidos</a></li>
+                <li><a href="/candidatos.html">Cadastro de Candidatos</a></li>
+            </ul>
+        </nav>
+        <button class="logout" onclick="logout()">Sair</button>
+    </div>
+
+    <script>
+        const loggedin = localStorage.getItem('loggedin');
+        const loginTime = localStorage.getItem('loginTime');
+        const trintaMinutos = 30 * 60 * 1000;
+        if (!loggedin || (Date.now() - loginTime > trintaMinutos)) {
+            window.location.href = '/index.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('loggedin');
+            localStorage.removeItem('loginTime');
+            window.location.href = '/index.html';
+        }
+    </script>
+</body>
+</html>

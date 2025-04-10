@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Sistema de Cadastro</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container"></div>
+        <h2>Login</h2>
+        <form id="loginForm">
+            <label for="usuario">Usuário:</label>
+            <input type="text" id="usuario" required>
+            <label for="senha">Senha:</label>
+            <input type="password" id="senha" required>
+            <button type="submit">Entrar</button>
+        </form>
+        <p id="mensagem"></p>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const usuario = document.getElementById('usuario').value;
+            const senha = document.getElementById('senha').value;
+
+            if (!usuario || !senha) {
+                document.getElementById('mensagem').innerText = 'Preencha todos os campos!';
+                return;
+            }
+
+            fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, senha })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('loggedin', 'true');
+                    localStorage.setItem('loginTime', Date.now());
+                    window.location.href = '/menu.html';
+                } else {
+                    document.getElementById('mensagem').innerText = 'Usuário ou senha inválidos!';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
